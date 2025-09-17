@@ -1,10 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sprout, Lock, Eye, EyeOff, Coins, TrendingUp } from "lucide-react";
+import { Coins, TrendingUp, Lock, Eye, EyeOff, Shield, Zap } from "lucide-react";
 import { useState } from "react";
-import { useNeonSecrecyFarm } from "@/hooks/useContract";
-import { parseEther } from "viem";
+import StakeDialog from "./StakeDialog";
+import HarvestDialog from "./HarvestDialog";
 
 interface FarmingPoolProps {
   name: string;
@@ -13,76 +12,23 @@ interface FarmingPoolProps {
   isStaked: boolean;
   stakedAmount?: string;
   poolId?: number;
+  stakeId?: number;
 }
 
-const FarmingPool = ({ name, token, confidentialAPY, isStaked, stakedAmount, poolId = 0 }: FarmingPoolProps) => {
+const FarmingPool = ({ 
+  name, 
+  token, 
+  confidentialAPY, 
+  isStaked, 
+  stakedAmount, 
+  poolId = 0,
+  stakeId = 0 
+}: FarmingPoolProps) => {
   const [showAPY, setShowAPY] = useState(false);
-  const [isStaking, setIsStaking] = useState(false);
-  const [isHarvesting, setIsHarvesting] = useState(false);
-  
-  const { 
-    stakeTokens, 
-    claimRewards, 
-    isPending, 
-    isConfirming, 
-    isConfirmed,
-    error 
-  } = useNeonSecrecyFarm();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const handleStake = async () => {
-    if (!poolId) return;
-    
-    setIsStaking(true);
-    try {
-      // Example stake amount (1 ETH)
-      const stakeAmount = parseEther("1.0");
-      
-      // In a real implementation, you would:
-      // 1. Encrypt the amount using FHE
-      // 2. Generate proof for the encrypted amount
-      // 3. Call the contract with encrypted data
-      
-      // For demo purposes, we'll use placeholder values
-      const encryptedAmount = "0x" + "0".repeat(64); // Placeholder encrypted amount
-      const inputProof = "0x" + "0".repeat(64); // Placeholder proof
-      
-      await stakeTokens(
-        BigInt(poolId),
-        stakeAmount,
-        encryptedAmount as `0x${string}`,
-        inputProof as `0x${string}`
-      );
-    } catch (err) {
-      console.error('Staking failed:', err);
-    } finally {
-      setIsStaking(false);
-    }
-  };
-
-  const handleHarvest = async () => {
-    if (!poolId) return;
-    
-    setIsHarvesting(true);
-    try {
-      // In a real implementation, you would:
-      // 1. Calculate encrypted reward amount
-      // 2. Generate proof for the reward
-      // 3. Call the contract to claim rewards
-      
-      // For demo purposes, we'll use placeholder values
-      const rewardAmount = "0x" + "0".repeat(64); // Placeholder encrypted reward
-      const inputProof = "0x" + "0".repeat(64); // Placeholder proof
-      
-      await claimRewards(
-        BigInt(0), // Stake ID - would be tracked in real implementation
-        rewardAmount as `0x${string}`,
-        inputProof as `0x${string}`
-      );
-    } catch (err) {
-      console.error('Harvesting failed:', err);
-    } finally {
-      setIsHarvesting(false);
-    }
+  const handleSuccess = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const getStatusIcon = () => {
@@ -92,8 +38,25 @@ const FarmingPool = ({ name, token, confidentialAPY, isStaked, stakedAmount, poo
     return <TrendingUp className="h-5 w-5 text-blue-500" />;
   };
 
+  const getStatusBadge = () => {
+    if (isStaked) {
+      return (
+        <Badge variant="default" className="glow-green bg-green-500/20 text-green-400 border-green-500/30">
+          <Shield className="h-3 w-3 mr-1" />
+          Active
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="secondary" className="glow-blue bg-blue-500/20 text-blue-400 border-blue-500/30">
+        <Zap className="h-3 w-3 mr-1" />
+        Available
+      </Badge>
+    );
+  };
+
   return (
-    <Card className="float glow-hover border-primary/10">
+    <Card className="float glow-hover border-primary/10 hover:border-primary/20 transition-all duration-300">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -105,10 +68,13 @@ const FarmingPool = ({ name, token, confidentialAPY, isStaked, stakedAmount, poo
               <CardDescription>{token} Pool</CardDescription>
             </div>
           </div>
-          <Badge variant="secondary" className="glow-green">
-            <Lock className="h-3 w-3 mr-1" />
-            Private
-          </Badge>
+          <div className="flex flex-col gap-2">
+            <Badge variant="secondary" className="glow-green">
+              <Lock className="h-3 w-3 mr-1" />
+              Private
+            </Badge>
+            {getStatusBadge()}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -119,27 +85,23 @@ const FarmingPool = ({ name, token, confidentialAPY, isStaked, stakedAmount, poo
               {confidentialAPY && !showAPY ? (
                 <>
                   <p className="text-lg font-bold text-neon">••••%</p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => setShowAPY(true)}
-                    className="p-1 h-6 w-6"
+                    className="p-1 h-6 w-6 rounded hover:bg-muted/50 transition-colors"
                   >
                     <Eye className="h-3 w-3" />
-                  </Button>
+                  </button>
                 </>
               ) : (
                 <>
                   <p className="text-lg font-bold text-electric">12.5%</p>
                   {confidentialAPY && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <button
                       onClick={() => setShowAPY(false)}
-                      className="p-1 h-6 w-6"
+                      className="p-1 h-6 w-6 rounded hover:bg-muted/50 transition-colors"
                     >
                       <EyeOff className="h-3 w-3" />
-                    </Button>
+                    </button>
                   )}
                 </>
               )}
@@ -153,47 +115,60 @@ const FarmingPool = ({ name, token, confidentialAPY, isStaked, stakedAmount, poo
           </div>
         </div>
         
-        {/* Transaction Status */}
-        {(isPending || isConfirming) && (
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <p className="text-sm text-blue-400">
-              {isPending ? "Transaction pending..." : "Confirming transaction..."}
-            </p>
+        {/* Pool Statistics */}
+        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
+          <div>
+            <p className="text-xs text-muted-foreground">Total Staked</p>
+            <p className="text-sm font-medium">•••• {token}</p>
           </div>
-        )}
-        
-        {isConfirmed && (
-          <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-            <p className="text-sm text-green-400">Transaction confirmed!</p>
+          <div>
+            <p className="text-xs text-muted-foreground">Participants</p>
+            <p className="text-sm font-medium">••••</p>
           </div>
-        )}
+        </div>
         
-        {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-sm text-red-400">Transaction failed: {error.message}</p>
+        {/* Privacy Features */}
+        <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+          <Shield className="h-4 w-4 text-blue-500" />
+          <div className="flex-1">
+            <p className="text-xs font-medium text-blue-400">FHE Protected</p>
+            <p className="text-xs text-muted-foreground">Amounts encrypted on-chain</p>
           </div>
-        )}
+        </div>
         
+        {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button 
-            variant="cyber" 
-            className="flex-1"
-            onClick={handleStake}
-            disabled={isPending || isConfirming || isStaking}
-          >
-            {isStaking ? "Staking..." : (isStaked ? "Add More" : "Stake")}
-          </Button>
+          <StakeDialog
+            poolName={name}
+            token={token}
+            poolId={poolId}
+            isStaked={isStaked}
+            onSuccess={handleSuccess}
+          />
           {isStaked && (
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={handleHarvest}
-              disabled={isPending || isConfirming || isHarvesting}
-            >
-              {isHarvesting ? "Harvesting..." : "Harvest"}
-            </Button>
+            <HarvestDialog
+              poolName={name}
+              token={token}
+              poolId={poolId}
+              stakeId={stakeId}
+              onSuccess={handleSuccess}
+            />
           )}
         </div>
+        
+        {/* Additional Info for Staked Pools */}
+        {isStaked && (
+          <div className="pt-2 border-t border-border/50">
+            <div className="flex justify-between items-center text-xs text-muted-foreground">
+              <span>Estimated Rewards</span>
+              <span className="text-green-400 font-medium">+0.024 {token}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+              <span>Next Harvest</span>
+              <span>Available now</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

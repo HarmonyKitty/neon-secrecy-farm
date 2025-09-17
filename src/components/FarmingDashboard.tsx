@@ -4,17 +4,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FarmingPool from "./FarmingPool";
 import WalletConnect from "./WalletConnect";
-import { TrendingUp, Shield, Coins } from "lucide-react";
+import { TrendingUp, Shield, Coins, BarChart3, Users, Lock } from "lucide-react";
 
 const FarmingDashboard = () => {
   const { address, isConnected } = useAccount();
 
   const pools = [
-    { name: "ETH Vault", token: "ETH", confidentialAPY: true, isStaked: true, stakedAmount: "2.5 ETH" },
-    { name: "USDC Stable", token: "USDC", confidentialAPY: true, isStaked: false },
-    { name: "BTC Reserve", token: "WBTC", confidentialAPY: true, isStaked: true, stakedAmount: "0.1 BTC" },
-    { name: "DeFi Basket", token: "DEFI", confidentialAPY: true, isStaked: false },
+    { 
+      name: "ETH Vault", 
+      token: "ETH", 
+      confidentialAPY: true, 
+      isStaked: true, 
+      stakedAmount: "2.5 ETH",
+      poolId: 1,
+      stakeId: 1
+    },
+    { 
+      name: "USDC Stable", 
+      token: "USDC", 
+      confidentialAPY: true, 
+      isStaked: false,
+      poolId: 2,
+      stakeId: 0
+    },
+    { 
+      name: "BTC Reserve", 
+      token: "WBTC", 
+      confidentialAPY: true, 
+      isStaked: true, 
+      stakedAmount: "0.1 BTC",
+      poolId: 3,
+      stakeId: 2
+    },
+    { 
+      name: "DeFi Basket", 
+      token: "DEFI", 
+      confidentialAPY: true, 
+      isStaked: false,
+      poolId: 4,
+      stakeId: 0
+    },
   ];
+
+  const stakedPools = pools.filter(pool => pool.isStaked);
 
   return (
     <section className="py-20 px-6">
@@ -92,43 +124,83 @@ const FarmingDashboard = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pools.filter(pool => pool.isStaked).map((pool, index) => (
+                {stakedPools.map((pool, index) => (
                   <FarmingPool key={index} {...pool} />
                 ))}
               </div>
             </TabsContent>
             
             <TabsContent value="analytics" className="space-y-6">
-              <Card className="glow-hover">
-                <CardHeader>
-                  <CardTitle>Privacy Analytics</CardTitle>
-                  <CardDescription>
-                    Your farming strategy protection metrics
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Strategy Encryption</span>
-                      <span className="text-neon font-bold">Active</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="glow-hover">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Privacy Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Your farming strategy protection metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Strategy Encryption</span>
+                        <span className="text-neon font-bold flex items-center gap-1">
+                          <Lock className="h-4 w-4" />
+                          Active
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Front-running Protection</span>
+                        <span className="text-electric font-bold">100%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>MEV Protection</span>
+                        <span className="text-accent font-bold">Enabled</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Connected Address</span>
+                        <span className="text-muted-foreground font-mono text-sm">
+                          {address?.slice(0, 6)}...{address?.slice(-4)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>Front-running Protection</span>
-                      <span className="text-electric font-bold">100%</span>
+                  </CardContent>
+                </Card>
+
+                <Card className="glow-hover">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Pool Statistics
+                    </CardTitle>
+                    <CardDescription>
+                      Anonymous pool performance metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Total Pools</span>
+                        <span className="font-bold">4</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Active Positions</span>
+                        <span className="font-bold text-green-400">{stakedPools.length}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Average APY</span>
+                        <span className="font-bold text-electric">12.5%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Privacy Level</span>
+                        <span className="font-bold text-blue-400">Maximum</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>MEV Protection</span>
-                      <span className="text-accent font-bold">Enabled</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Connected Address</span>
-                      <span className="text-muted-foreground font-mono text-sm">
-                        {address?.slice(0, 6)}...{address?.slice(-4)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
